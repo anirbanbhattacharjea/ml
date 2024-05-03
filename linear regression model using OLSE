@@ -1,0 +1,64 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+data = pd.read_csv("Salary Data.csv")
+data
+
+x = data.iloc[:,4]
+y = data.iloc[:,-1]
+
+from sklearn.model_selection import train_test_split
+x_train, x_test, y_train, y_test = train_test_split(x,y, test_size=0.2, random_state=1)
+
+class OLS:
+    x_mean = 0
+    y_mean = 0
+    beta_0 = 0
+    beta_1 = 0
+    
+    def fit(self, x_train, y_train):
+        x_mean = np.mean(x_train)
+        y_mean = np.mean(y_train)
+        
+        x_minus_x_mean = x_train - x_mean
+        y_minus_y_mean = y_train - y_mean
+        
+        prod = x_minus_x_mean*y_minus_y_mean
+        prod_sum = np.sum(prod)
+        
+        x_minus_x_mean_WSQ = np.square(x_minus_x_mean)
+        
+        x_minus_x_mean_WSQ_sum = np.sum(x_minus_x_mean_WSQ)
+        
+        self.beta_1 = prod_sum/x_minus_x_mean_WSQ_sum
+        self.beta_0 = y_mean - (self.beta_1*x_mean)
+        
+        return self.beta_1, self.beta_0
+    
+    def predict(self, x_test):
+        y_pred = []
+        for i in x_test:
+            y_pred.append(self.beta_0 + (self.beta_1*i))
+        return np.array(y_pred)
+
+predictor = OLS()
+coeff = predictor.fit(x_train, y_train)
+y_pred = predictor.predict(x_test)
+print(coeff)
+print(y_pred)
+print(y_test)
+
+from sklearn.metrics import mean_squared_error
+a = mean_squared_error(y_test, y_pred)
+print(a)
+
+from sklearn.metrics import r2_score
+r2 = r2_score(y_test, y_pred)
+print(r2)
+
+plt.plot(x_test, y_pred, c='black')
+plt.scatter(x_test, y_test, c='red')
+plt.xlim(0.0, 25.0)
+plt.ylim(0.0, 250000.0)
+plt.show()
