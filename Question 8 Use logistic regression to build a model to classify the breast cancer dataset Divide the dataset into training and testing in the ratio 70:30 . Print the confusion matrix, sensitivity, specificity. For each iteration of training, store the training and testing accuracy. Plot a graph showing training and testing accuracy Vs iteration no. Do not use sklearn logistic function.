@@ -1,0 +1,85 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Load the breast cancer dataset
+from sklearn.datasets import load_breast_cancer
+data = load_breast_cancer()
+X = data.data
+y = data.target
+
+# Define sigmoid function
+def sigmoid(z):
+    return 1 / (1 + np.exp(-z))
+
+# Define the logistic regression function
+def logistic_regression(X, y, learning_rate, iterations):
+    # Initialize weights and biases
+    n_samples, n_features = X.shape
+    weights = np.zeros(n_features)
+    bias = 0
+    
+    # Lists to store training and testing accuracy
+    training_accuracy = []
+    testing_accuracy = []
+    
+    for i in range(iterations):
+        # Compute predictions
+        linear_model = np.dot(X, weights) + bias
+        predictions = sigmoid(linear_model)
+        
+        # Compute gradients
+        dw = (1 / n_samples) * np.dot(X.T, (predictions - y))
+        db = (1 / n_samples) * np.sum(predictions - y)
+        
+        # Update weights and bias
+        weights -= learning_rate * dw
+        bias -= learning_rate * db
+        
+        # Calculate training and testing accuracy
+        y_train_pred = predict(X_train, weights, bias)
+        y_test_pred = predict(X_test, weights, bias)
+        training_accuracy.append(accuracy(y_train, y_train_pred))
+        testing_accuracy.append(accuracy(y_test, y_test_pred))
+        
+        if i % 100 == 0:
+            print(f"Iteration {i}: Training Accuracy: {training_accuracy[-1]}, Testing Accuracy: {testing_accuracy[-1]}")
+    
+    return weights, bias, training_accuracy, testing_accuracy
+
+# Define predict function
+def predict(X, weights, bias):
+    linear_model = np.dot(X, weights) + bias
+    predictions = sigmoid(linear_model)
+    return [1 if p >= 0.5 else 0 for p in predictions]
+
+# Define accuracy function
+def accuracy(y_true, y_pred):
+    correct = 0
+    for i in range(len(y_true)):
+        if y_true[i] == y_pred[i]:
+            correct += 1
+    return correct / len(y_true)
+
+# Split the dataset into training and testing sets (70:30 ratio)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Normalize the features
+X_train = (X_train - np.mean(X_train, axis=0)) / np.std(X_train, axis=0)
+X_test = (X_test - np.mean(X_train, axis=0)) / np.std(X_train, axis=0)
+
+# Set hyperparameters
+learning_rate = 0.01
+iterations = 1000
+
+# Train logistic regression model
+weights, bias, training_accuracy, testing_accuracy = logistic_regression(X_train, y_train, learning_rate, iterations)
+
+# Plot training and testing accuracy vs iteration no.
+plt.plot(range(iterations), training_accuracy, label='Training Accuracy')
+plt.plot(range(iterations), testing_accuracy, label='Testing Accuracy')
+plt.xlabel('Iteration No.')
+plt.ylabel('Accuracy')
+plt.title('Training and Testing Accuracy vs Iteration No.')
+plt.legend()
+plt.show()
