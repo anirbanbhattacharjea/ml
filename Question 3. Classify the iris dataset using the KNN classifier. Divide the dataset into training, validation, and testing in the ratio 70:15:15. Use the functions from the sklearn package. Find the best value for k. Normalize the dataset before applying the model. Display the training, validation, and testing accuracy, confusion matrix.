@@ -1,0 +1,66 @@
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix
+
+# Load the iris dataset
+iris = load_iris()
+X = iris.data
+y = iris.target
+
+# Split the dataset into training, validation, and testing sets (70:15:15 ratio)
+X_train_val, X_test, y_train_val, y_test = train_test_split(X, y, test_size=0.15, random_state=42)
+X_train, X_val, y_train, y_val = train_test_split(X_train_val, y_train_val, test_size=0.176, random_state=42) # Validation size = 15/85 ~= 0.176
+
+# Normalize the dataset
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_val_scaled = scaler.transform(X_val)
+X_test_scaled = scaler.transform(X_test)
+
+# Find the best value for k
+best_k = None
+best_accuracy = 0
+
+for k in range(1, 21):
+    # Initialize the KNN classifier
+    knn = KNeighborsClassifier(n_neighbors=k)
+    
+    # Fit the classifier on the training data
+    knn.fit(X_train_scaled, y_train)
+    
+    # Predict the labels for the validation data
+    y_val_pred = knn.predict(X_val_scaled)
+    
+    # Calculate validation accuracy
+    accuracy = accuracy_score(y_val, y_val_pred)
+    
+    # Update best_k and best_accuracy if current accuracy is better
+    if accuracy > best_accuracy:
+        best_accuracy = accuracy
+        best_k = k
+
+# Train the KNN classifier with the best value of k
+knn = KNeighborsClassifier(n_neighbors=best_k)
+knn.fit(X_train_scaled, y_train)
+
+# Predict the labels for training, validation, and testing data
+y_train_pred = knn.predict(X_train_scaled)
+y_val_pred = knn.predict(X_val_scaled)
+y_test_pred = knn.predict(X_test_scaled)
+
+# Calculate training, validation, and testing accuracy
+train_accuracy = accuracy_score(y_train, y_train_pred)
+val_accuracy = accuracy_score(y_val, y_val_pred)
+test_accuracy = accuracy_score(y_test, y_test_pred)
+
+# Calculate confusion matrix for testing data
+conf_matrix = confusion_matrix(y_test, y_test_pred)
+
+print("Best k:", best_k)
+print("Training Accuracy:", train_accuracy)
+print("Validation Accuracy:", val_accuracy)
+print("Testing Accuracy:", test_accuracy)
+print("Confusion Matrix:")
+print(conf_matrix)
