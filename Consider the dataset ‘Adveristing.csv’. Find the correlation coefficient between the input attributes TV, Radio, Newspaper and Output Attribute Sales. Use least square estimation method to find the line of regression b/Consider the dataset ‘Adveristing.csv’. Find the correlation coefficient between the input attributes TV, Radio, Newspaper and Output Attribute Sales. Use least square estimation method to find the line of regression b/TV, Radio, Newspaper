@@ -1,0 +1,111 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+data = pd.read_csv("Advertising.csv")
+print(data)
+
+x = data.iloc[: , 1:-1]
+y = data.iloc[: , -1]
+
+from sklearn.model_selection import train_test_split
+x_train, x_test, y_train, y_test = train_test_split(x,y, test_size=0.2, random_state=1)
+
+x_train_tv = x_train['TV'].values
+x_train_radio = x_train['Radio'].values
+x_train_newspaper = x_train['Newspaper'].values
+
+x_test_tv = x_test['TV'].values
+x_test_radio = x_test['Radio'].values
+x_test_newspaper = x_test['Newspaper'].values
+
+corr_tv_sales = np.corrcoef(data['TV'], data['Sales'])[0, 1]
+corr_radio_sales = np.corrcoef(data['Radio'], data['Sales'])[0, 1]
+corr_newspaper_sales = np.corrcoef(data['Newspaper'], data['Sales'])[0, 1]
+
+print("Correlation coefficient between TV and Sales:", corr_tv_sales)
+print("Correlation coefficient between Radio and Sales:", corr_radio_sales)
+print("Correlation coefficient between Newspaper and Sales:", corr_newspaper_sales)
+
+class OLS:
+    x_mean = 0
+    y_mean = 0
+    beta_0 = 0
+    beta_1 = 0
+    
+    def fit(self, x_train, y_train):
+        x_mean = np.mean(x_train)
+        y_mean = np.mean(y_train)
+        
+        x_minus_x_mean = x_train - x_mean
+        y_minus_y_mean = y_train - y_mean
+        
+        prod = x_minus_x_mean*y_minus_y_mean
+        prod_sum = np.sum(prod)
+        
+        x_minus_x_mean_WSQ = np.square(x_minus_x_mean)
+        
+        x_minus_x_mean_WSQ_sum = np.sum(x_minus_x_mean_WSQ)
+        
+        self.beta_1 = prod_sum/x_minus_x_mean_WSQ_sum
+        self.beta_0 = y_mean - (self.beta_1*x_mean)
+        
+        return self.beta_1, self.beta_0
+    
+    def predict(self, x_test):
+        y_pred = []
+        for i in x_test:
+            y_pred.append(self.beta_0 + (self.beta_1*i))
+        return np.array(y_pred)
+    
+    def error(self, y, y_pred):
+        return np.mean((y - y_pred) ** 2)
+
+predictor = OLS()
+
+coeff_tv = predictor.fit(x_train_tv, y_train)
+y_pred_tv = predictor.predict(x_test_tv)
+error_tv = predictor.error(y_test, y_pred_tv)
+
+coeff_radio = predictor.fit(x_train_radio, y_train)
+y_pred_radio = predictor.predict(x_test_radio)
+error_radio = predictor.error(y_test, y_pred_radio)
+
+coeff_newspaper = predictor.fit(x_train_newspaper, y_train)
+y_pred_newspaper = predictor.predict(x_test_newspaper)
+error_newspaper = predictor.error(y_test, y_pred_newspaper)
+
+#TV vs Sales
+plt.figure(figsize=(12, 5))
+plt.subplot(1, 3, 1)
+plt.scatter(x_test_tv, y_test, color='blue', label='Actual')
+plt.plot(x_test_tv, y_pred_tv, color='red', label='Regression Line')
+plt.xlabel('TV')
+plt.ylabel('Sales')
+plt.title('TV vs Sales')
+plt.legend()
+
+#Radio vs Sales
+plt.subplot(1, 3, 2)
+plt.scatter(x_test_radio, y_test, color='blue', label='Actual')
+plt.plot(x_test_radio, y_pred_radio, color='red', label='Regression Line')
+plt.xlabel('Radio')
+plt.ylabel('Sales')
+plt.title('Radio vs Sales')
+plt.legend()
+
+#Newspaper vs Sales
+plt.subplot(1, 3, 3)
+plt.scatter(x_test_newspaper, y_test, color='blue', label='Actual')
+plt.plot(x_test_newspaper, y_pred_newspaper, color='red', label='Regression Line')
+plt.xlabel('Newspaper')
+plt.ylabel('Sales')
+plt.title('Newspaper vs Sales')
+plt.legend()
+
+plt.tight_layout()
+plt.show()
+
+print("Error for TV and Sales:", error_tv)
+print("Error for Radio and Sales:", error_radio)
+print("Error for Newspaper and Sales:", error_newspaper)
