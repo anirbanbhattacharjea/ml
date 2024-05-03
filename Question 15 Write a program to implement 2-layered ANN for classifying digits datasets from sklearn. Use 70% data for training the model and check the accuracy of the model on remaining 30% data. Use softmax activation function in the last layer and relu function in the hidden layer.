@@ -1,0 +1,84 @@
+import numpy as np
+from sklearn.datasets import load_digits
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.metrics import accuracy_score
+
+# Load the digits dataset
+digits = load_digits()
+X = digits.data
+y = digits.target
+
+# Normalize the features
+X_normalized = X / 16.0
+
+# One-hot encode the target labels
+encoder = OneHotEncoder()
+y_onehot = encoder.fit_transform(y.reshape(-1, 1)).toarray()
+
+# Split the dataset into training and testing sets (70:30 ratio)
+X_train, X_test, y_train, y_test = train_test_split(X_normalized, y_onehot, test_size=0.3, random_state=42)
+
+# Define activation functions
+def relu(x):
+    return np.maximum(0, x)
+
+def softmax(x):
+    exps = np.exp(x - np.max(x, axis=1, keepdims=True))
+    return exps / np.sum(exps, axis=1, keepdims=True)
+
+# Initialize weights and biases
+np.random.seed(42)
+input_size = X_train.shape[1]
+hidden_size = 100  # Number of neurons in the hidden layer
+output_size = y_train.shape[1]
+W1 = np.random.randn(input_size, hidden_size) * np.sqrt(2.0 / input_size)
+b1 = np.zeros(hidden_size)
+W2 = np.random.randn(hidden_size, output_size) * np.sqrt(2.0 / hidden_size)
+b2 = np.zeros(output_size)
+
+# Define learning rate and number of epochs
+learning_rate = 0.001
+epochs = 5000
+
+# Training the model
+for epoch in range(epochs):
+    # Forward propagation
+    z1 = np.dot(X_train, W1) + b1
+    a1 = relu(z1)
+    z2 = np.dot(a1, W2) + b2
+    a2 = softmax(z2)
+    
+    # Backpropagation
+    delta2 = a2 - y_train
+    delta1 = np.dot(delta2, W2.T) * (a1 > 0)
+    
+    dW2 = np.dot(a1.T, delta2)
+    db2 = np.sum(delta2, axis=0)
+    dW1 = np.dot(X_train.T, delta1)
+    db1 = np.sum(delta1, axis=0)
+    
+    # Gradient descent update
+    W2 -= learning_rate * dW2
+    b2 -= learning_rate * db2
+    W1 -= learning_rate * dW1
+    b1 -= learning_rate * db1
+    
+    # Print training accuracy every 100 epochs
+    if (epoch + 1) % 100 == 0:
+        predictions = np.argmax(a2, axis=1)
+        true_labels = np.argmax(y_train, axis=1)
+        train_accuracy = accuracy_score(true_labels, predictions)
+        print(f"Epoch {epoch + 1}/{epochs}, Training Accuracy: {train_accuracy:.4f}")
+
+# Testing the model
+z1 = np.dot(X_test, W1) + b1
+a1 = relu(z1)
+z2 = np.dot(a1, W2) + b2
+a2 = softmax(z2)
+
+predictions = np.argmax(a2, axis=1)
+true_labels = np.argmax(y_test, axis=1)
+test_accuracy = accuracy_score(true_labels, predictions)
+
+print(f"\nTesting Accuracy: {test_accuracy:.4f}")
