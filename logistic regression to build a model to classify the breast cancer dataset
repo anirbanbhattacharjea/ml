@@ -1,0 +1,97 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Load the breast cancer dataset
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
+
+# Load dataset
+data = load_breast_cancer()
+X = data.data
+y = data.target
+
+# Preprocessing: Feature scaling
+X = (X - X.mean(axis=0)) / X.std(axis=0)
+
+# Add intercept term to X
+X = np.hstack((np.ones((X.shape[0], 1)), X))
+
+# Split dataset into training and testing sets (70:30 ratio)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Sigmoid function
+def sigmoid(z):
+    return 1 / (1 + np.exp(-z))
+
+# Logistic regression hypothesis function
+def hypothesis(X, theta):
+    return sigmoid(np.dot(X, theta))
+
+# Logistic regression cost function
+def cost_function(X, y, theta):
+    m = len(y)
+    h = hypothesis(X, theta)
+    cost = (-1 / m) * np.sum(y * np.log(h) + (1 - y) * np.log(1 - h))
+    return cost
+
+# Logistic regression gradient descent function
+def gradient_descent(X, y, theta, learning_rate, epochs):
+    m = len(y)
+    cost_history = []
+    for _ in range(epochs):
+        h = hypothesis(X, theta)
+        gradient = np.dot(X.T, (h - y)) / m
+        theta -= learning_rate * gradient
+        cost = cost_function(X, y, theta)
+        cost_history.append(cost)
+    return theta, cost_history
+
+# Initialize theta and hyperparameters
+theta = np.zeros(X_train.shape[1])
+learning_rate = 0.01
+epochs = 1000
+
+# Train logistic regression model
+theta, cost_history = gradient_descent(X_train, y_train, theta, learning_rate, epochs)
+
+# Predictions on training and testing sets
+y_train_pred = (hypothesis(X_train, theta) >= 0.5).astype(int)
+y_test_pred = (hypothesis(X_test, theta) >= 0.5).astype(int)
+
+# Confusion matrix
+def confusion_matrix(y_true, y_pred):
+    tp = np.sum((y_true == 1) & (y_pred == 1))
+    fp = np.sum((y_true == 0) & (y_pred == 1))
+    fn = np.sum((y_true == 1) & (y_pred == 0))
+    tn = np.sum((y_true == 0) & (y_pred == 0))
+    return tp, fp, fn, tn
+
+tp_train, fp_train, fn_train, tn_train = confusion_matrix(y_train, y_train_pred)
+tp_test, fp_test, fn_test, tn_test = confusion_matrix(y_test, y_test_pred)
+
+# Sensitivity and specificity
+sensitivity_train = tp_train / (tp_train + fn_train)
+specificity_train = tn_train / (tn_train + fp_train)
+sensitivity_test = tp_test / (tp_test + fn_test)
+specificity_test = tn_test / (tn_test + fp_test)
+
+print("Training Confusion Matrix:")
+print(np.array([[tn_train, fp_train], [fn_train, tp_train]]))
+print("Sensitivity (Training):", sensitivity_train)
+print("Specificity (Training):", specificity_train)
+
+print("\nTesting Confusion Matrix:")
+print(np.array([[tn_test, fp_test], [fn_test, tp_test]]))
+print("Sensitivity (Testing):", sensitivity_test)
+print("Specificity (Testing):", specificity_test)
+
+# Plot training and testing accuracy versus iteration number
+plt.figure(figsize=(10, 6))
+plt.plot(range(1, epochs + 1), 1 - np.array(cost_history), label='Training Accuracy')
+plt.xlabel('Iteration Number')
+plt.ylabel('Accuracy')
+plt.title('Training Accuracy vs Iteration Number')
+plt.legend()
+plt.grid(True)
+plt.show()
