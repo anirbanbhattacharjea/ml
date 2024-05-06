@@ -1,0 +1,75 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+data = pd.read_csv("Advertising.csv")
+x = data.iloc[: , 1:-1]
+y = data.iloc[: , -1]
+
+from sklearn.model_selection import train_test_split
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
+
+from sklearn.linear_model import SGDRegressor
+
+model = SGDRegressor(max_iter=1000, random_state=42)
+model.fit(x_train, y_train)
+
+y_pred = model.predict(x_test)
+from sklearn.metrics import r2_score
+
+r2 = r2_score(y_test, y_pred)
+print("R-squared (R2):", r2)
+
+OR
+
+import pandas as pd
+import numpy as np
+
+# Load the dataset
+data = pd.read_csv(r'C:\Users\anirb\OneDrive\Documents\Advertising.csv')
+
+# Define the features (input attributes) and target (output attribute)
+X = data[['TV', 'Radio', 'Newspaper']]
+y = data['Sales']
+
+# Add a column of ones to X for the intercept term
+X['intercept'] = 1
+
+# Initialize parameters (coefficients)
+np.random.seed(42)
+theta = np.random.rand(len(X.columns))
+
+# Define the learning rate and number of iterations
+alpha = 0.0001
+iterations = 10000
+
+# Define the cost function (mean squared error)
+def cost_function(X, y, theta):
+    predictions = np.dot(X, theta)
+    errors = predictions - y
+    return np.mean(errors**2)
+
+# Define the gradient descent algorithm
+def gradient_descent(X, y, theta, alpha, iterations):
+    cost_history = []
+    for i in range(iterations):
+        predictions = np.dot(X, theta)
+        errors = predictions - y
+        gradient = 2 * np.dot(X.T, errors) / len(X)
+        theta -= alpha * gradient
+        cost = cost_function(X, y, theta)
+        cost_history.append(cost)
+    return theta, cost_history
+
+# Run gradient descent
+theta_best, cost_history = gradient_descent(X.values, y.values, theta, alpha, iterations)
+
+# Calculate R-squared value
+y_pred = np.dot(X.values, theta_best)
+y_mean = np.mean(y)
+total_sum_squares = np.sum((y - y_mean)**2)
+residual_sum_squares = np.sum((y - y_pred)**2)
+r_squared = 1 - (residual_sum_squares / total_sum_squares)
+
+print("Best-fit regression line coefficients:", theta_best)
+print("R-squared value:", r_squared)
